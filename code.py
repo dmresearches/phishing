@@ -250,6 +250,7 @@ print(legitimate)
 phishing = sorted(phish.items(), key=lambda x: x[1],reverse=True)    
 print(phishing)
 
+# ___________________________________________________________________
 X = data.iloc[:,:-1]
 Y = data.iloc[:,-1]
 
@@ -314,7 +315,8 @@ sort_orders = sorted(dat.items(), key=lambda x: x[1],reverse=True)
 
 for i in sort_orders:
 	print(i[0], i[1])
-
+	
+# another feature selection methods
 from sklearn.decomposition import PCA
 
 model = PCA(n_components=9).fit(X)
