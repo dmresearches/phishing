@@ -3,16 +3,32 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 import community
+import pydot
 import collections
+from xgboost import XGBClassifier
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.decomposition import PCA
+from sklearn.model_selection import cross_val_score
+from numpy import mean, std
+from sklearn.model_selection import train_test_split
+from numpy import set_printoptions
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import f_classif
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
+
+
 
 #import data 
-data = pd.read_csv("F:\\D G\\py\\phishing.csv")
+data = pd.read_csv("phishing.csv")
 
 data.rename(columns={'Shortining_Service': 'Shortening Service'}, inplace=True)
 
 #cut data to tree part(all, legitimate, phishing) 
 all_of_data = data.copy()
 del all_of_data['Result']
+
+data
 
 legitimate_of_data = data[data.Result == 1]
 del legitimate_of_data['Result']
@@ -251,10 +267,10 @@ phishing = sorted(phish.items(), key=lambda x: x[1],reverse=True)
 print(phishing)
 
 # ___________________________________________________________________
+
 X = data.iloc[:,:-1]
 Y = data.iloc[:,-1]
 
-from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test =train_test_split(X,Y,random_state = 42,test_size = 0.2)
 
@@ -314,10 +330,10 @@ w=list(find_hob(dat))
 sort_orders = sorted(dat.items(), key=lambda x: x[1],reverse=True)
 
 for i in sort_orders:
-	print(i[0], i[1])
-	
+     print(i[0], i[1])
+
 # another feature selection methods
-from sklearn.decomposition import PCA
+
 
 model = PCA(n_components=9).fit(X)
 X_pc = model.transform(X)
@@ -341,9 +357,7 @@ dic = {'PC{}'.format(i+1): most_important_names[i] for i in range(n_pcs)}
 df = pd.DataFrame(sorted(dic.items()))
 df
 
-from numpy import set_printoptions
-from sklearn.feature_selection import SelectKBest
-from sklearn.feature_selection import f_classif
+
 # feature extraction
 test = SelectKBest(score_func=f_classif, k=4)
 fit = test.fit(X, Y)
@@ -356,10 +370,9 @@ data_sorted = sorted(d.items(), key=lambda x: x[1],reverse=True)
 
 
 for i in data_sorted:
-	print(i[0], i[1])
+    print(i[0], i[1])
 
-from sklearn.feature_selection import RFE
-from sklearn.linear_model import LogisticRegression
+
 
 # feature extraction
 model = LogisticRegression(solver='lbfgs')
@@ -372,4 +385,19 @@ data_sorted_RFE = sorted(d_RFE.items(), key=lambda x: x[1])
 
 
 for i in data_sorted_RFE:
-	print(i[0],i[1])
+    print(i[0],i[1])
+
+selected_features_by_network = ['URL_of_Anchor','SSLfinal_State ','Shortening Service','double_slash_redirecting','URL_Length']
+
+x_n = X[selected_features_by_network]
+
+clf =XGBClassifier(random_state=1425)
+cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=142)
+n_scores = cross_val_score(clf, x_n, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
+print('Accuracy: %.3f (%.3f)' % (mean(n_scores), std(n_scores)))
+
+pca = PCA(n_components=5)
+x_p = pca.fit_transform(X)
+cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+n_scores_PCA = cross_val_score(clf, x_p, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise')
+print('Accuracy: %.3f (%.3f)' % (mean(n_scores_PCA), std(n_scores_PCA)))
